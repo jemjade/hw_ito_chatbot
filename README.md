@@ -2,7 +2,7 @@
 
 ## Overview
 
-This repository contains a project that utilizes LangChain and Streamlit to build a Retrieval Augmented Generation (RAG) application. The primary focus of this application is to provide insights and answers based on the South Korean Income Tax Law (소득세법). By leveraging advanced NLP techniques, this application enhances its responses using a combination of chat history and few-shot learning templates.
+This repository contains a project that utilizes LangChain and Streamlit to build a Retrieval Augmented Generation (RAG) application. The primary focus of this application is to provide insights and answers based on the Hanhwa G/I. By leveraging advanced NLP techniques, this application enhances its responses using a combination of chat history and few-shot learning templates.
 
 ## Features
 
