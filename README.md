@@ -1,4 +1,4 @@
-# Inflearn Streamlit Project
+# Hanwha General Insurance chatbot Project
 
 ## Overview
 
