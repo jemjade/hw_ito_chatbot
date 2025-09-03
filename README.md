@@ -25,6 +25,20 @@
     pip install -r requirements.txt
     ```
 
+## Ollama 설치 및 실행
+```
+brew install ollama
+brew install --cask ollama-app
+# ollama app 실행
+ollama --version
+
+# CLI 환경에서 정상동작 확인
+ollama run llama2
+ollama run qwen3:30b
+ollama run qwen2.5:3b
+
+```
+
 ## Usage
 
 1. Run the Streamlit application:

@@ -27,7 +27,7 @@ jsonschema==4.22.0
 jsonschema-specifications==2023.12.1
 langchain==0.2.3
 langchain-community==0.2.4
-langchain-core==0.2.5
+langchain-core
 langchain-openai==0.1.8
 langchain-pinecone==0.1.1
 langchain-text-splitters==0.2.1
@@ -78,3 +78,9 @@ typing_extensions==4.12.2
 tzdata==2024.1
 urllib3==2.2.1
 yarl==1.9.4
+langchain-community
+python-dotenv
+ollama
+langchain_chroma
+langchain_huggingface
+langchain_ollama
