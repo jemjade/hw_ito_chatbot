@@ -1,5 +1,24 @@
 # Hanwha General Insurance chatbot Project
 
+## 설치방법
+
+1. Clone the repository:
+    ```sh
+    git clone https://github.com/jemjade/hw_ito_chatbot.git
+    cd hw_ito_chatbot
+    ```
+
+2. Create and activate a virtual environment:
+    ```sh
+    python3 -m venv venv
+    source venv/bin/activate
+    ```
+
+3. Install the required dependencies:
+    ```sh
+    pip install -r requirements.txt
+    ```
+
 ## Overview
 
 This repository contains a project that utilizes LangChain and Streamlit to build a Retrieval Augmented Generation (RAG) application. The primary focus of this application is to provide insights and answers based on the Hanhwa G/I. By leveraging advanced NLP techniques, this application enhances its responses using a combination of chat history and few-shot learning templates.
@@ -67,3 +86,5 @@ Contributions are welcome! Please feel free to submit a Pull Request or open an 
 ---
 
 Feel free to modify and enhance this README to better fit your project's specifics and any additional information you may want to provide.
+
+streamlit run chat.py

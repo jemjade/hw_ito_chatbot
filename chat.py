@@ -4,6 +4,8 @@ from datetime import datetime
 import json
 from data.system_admins import SYSTEM_ADMINS
 from utils.keyword_matcher import KeywordMatcher
+from dotenv import load_dotenv
+#from llm import get_ai_response
 
 # 페이지 설정
 st.set_page_config(page_title="한화생명 시스템 담당자 검색", page_icon="💼", layout="wide")
@@ -420,6 +422,37 @@ def display_feedback_buttons(message_id):
                 """,
                             unsafe_allow_html=True)
 
+def initialize_session_state():
+    """Initialize session state variables."""
+    if 'env_loaded' not in st.session_state:
+        load_dotenv()
+        st.session_state['env_loaded'] = True
+    if 'message_list' not in st.session_state:
+        st.session_state.message_list = []
+
+def display_messages():
+    """Display all previous messages."""
+    for message in st.session_state.message_list:
+        with st.chat_message(message["role"]):
+            st.write(message["content"])
+
+def handle_user_input():
+    """Handle new user input and generate AI response."""
+    if user_question := st.chat_input(placeholder="소득세에 관련된 궁금한 내용들을 말씀해주세요!"):
+        # Display the user's message
+        with st.chat_message("user"):
+            st.write(user_question)
+        st.session_state.message_list.append({"role": "user", "content": user_question})
+
+        # Generate and display AI response
+        with st.spinner("답변을 생성하는 중입니다"):
+            try:
+                ai_response = get_ai_response(user_question)
+                with st.chat_message("ai"):
+                    st.write(ai_response)
+                st.session_state.message_list.append({"role": "ai", "content": ai_response})
+            except Exception as e:
+                st.error(f"AI 응답 생성 중 오류가 발생했습니다: {e}")
 
 def main():
     # 헤더 - 로고와 함께 (로고 파일이 있을 때만 표시)
@@ -492,8 +525,8 @@ def main():
             st.info("최근 조회 기록이 없습니다.")
 
     # 메인 영역
-    tab1, tab2, tab3, tab4, tab5 = st.tabs(
-        ["💬 채팅 검색", "📋 전체 담당자", "📝 대화 기록", "💡 개선사항", "📔교육용 자료"])
+    tab1, tab2, tab3, tab4, tab5, tab6 = st.tabs(
+        ["💬 채팅 검색", "📋 전체 담당자", "📝 대화 기록", "💡 개선사항", "📔교육용 자료", "테스트 화면"])
 
     with tab1:
         st.header("💬 채팅으로 담당자 찾기")
@@ -941,6 +974,17 @@ def main():
             - 파일 업로드 시 중복된 파일명은 덮어쓰기됩니다
             - 삭제된 파일은 복구할 수 없으니 신중하게 삭제해주세요
             """)
+
+    with tab6:
+        st.header("🎶테스트 화면")
+        # Initialize session state
+        initialize_session_state()
+
+        # Display all previous messages
+        display_messages()
+
+        # Handle new user input
+        handle_user_input()
 
     # 선택된 담당자 상세 보기 (사이드바에서 클릭한 경우)
     if hasattr(st.session_state, 'selected_admin'):
