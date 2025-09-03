@@ -2,13 +2,13 @@
 
 ## 설치방법
 
-1. Clone the repository:
+1. 리파지토리 클론:
     ```sh
     git clone https://github.com/jemjade/hw_ito_chatbot.git
     cd hw_ito_chatbot
     ```
 
-2. Create and activate a virtual environment:
+2. 파이선 가상환경 생성 및 활성화:
     ```sh
     # python 설치되어 있지 않은 경우
     pyenv install 3.11
@@ -20,7 +20,7 @@
     pyenv local hw_ito_env
     ```
 
-3. Install the required dependencies:
+3. 의존성 라이브러리 설치:
     ```sh
     pip install -r requirements.txt
     ```
@@ -31,11 +31,8 @@ brew install ollama
 brew install --cask ollama-app
 # ollama app 실행
 ollama --version
-
-# CLI 환경에서 정상동작 확인
-ollama run llama2
-ollama run qwen3:30b
 ollama run qwen2.5:3b
+# CLI 환경에서 모델 응답 정상동작 확인
 
 ```
 

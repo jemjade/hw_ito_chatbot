@@ -241,12 +241,16 @@ def get_rag_chain() -> RunnableWithMessageHistory:
 
 
 def get_ai_response(
-    rag_chain: RunnableWithMessageHistory,
-    user_message,
+    rag_chain: RunnableWithMessageHistory = None,
+    user_message = None,
     session_id="default_session",
     temperature: float = 0.0,
     top_p: float = 0.1,
 ) -> str:
+    # rag_chain이 전달되지 않았으면 get_rag_chain() 호출
+    if rag_chain is None:
+        rag_chain = get_rag_chain()
+
     config = {
         "configurable": {
             "session_id": session_id,

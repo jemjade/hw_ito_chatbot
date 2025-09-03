@@ -447,7 +447,7 @@ def handle_user_input():
         # Generate and display AI response
         with st.spinner("답변을 생성하는 중입니다"):
             try:
-                ai_response = get_ai_response(user_question)
+                ai_response = get_ai_response(user_message=user_question)
                 with st.chat_message("ai"):
                     st.write(ai_response)
                 st.session_state.message_list.append({"role": "ai", "content": ai_response})
