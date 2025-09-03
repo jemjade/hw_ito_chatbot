@@ -166,7 +166,7 @@ def _get_retriever():
     2. HuggingFace 임베딩 모델을 사용하여 문서들을 벡터로 변환하고 ChromaDB에 저장합니다.
     3. 저장된 벡터 데이터베이스를 기반으로 리트리버(retriever)를 생성합니다.
     """
-    _all_docs: List[Document] = _get_documents(LLMConfig.FILE_PATH)
+    _all_docs: List[Document] = _get_documents(LLMConfig.FILE_PATH1, LLMConfig.FILE_PATH2)
 
     embedding = HuggingFaceEmbeddings(model_name=LLMConfig.EMBEDDING_MODEL)
     database = Chroma.from_documents(
