@@ -132,7 +132,6 @@ def check_server_and_models(required_models: List[str]):
     for model in required_models:
         tag_model = model if ":" in model else f"{model}:latest"
         if tag_model not in installed_models:
-            print(f"모델 {tag_model}이(가) 없어 다운로드합니다...")
             _safe_pull(tag_model)
 
 
