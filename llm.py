@@ -21,17 +21,18 @@ from langchain_core.prompts import (
 )
 from langchain_core.runnables.history import RunnableWithMessageHistory
 from langchain_huggingface.embeddings import HuggingFaceEmbeddings
-
-from config import answer_examples
+from langchain_community.document_loaders import CSVLoader
+from langchain_text_splitters import CharacterTextSplitter
 
 
 class LLMConfig:
-    MODEL = "qwen3:4b"
-    FILE_PATH = "data/시스템별담당자리스트.csv"
+    MODEL = "qwen2.5:3b"
+    FILE_PATH1 = "emnbInfoList.csv"
+    FILE_PATH2 = "SysInfoList.csv"
     EMBEDDING_MODEL = "snunlp/KR-SBERT-V40K-klueNLI-augSTS"
     TEST_SESSION_ID = "cli_test"
-    CHROMA_DB_PATH = "./chroma_db"
-    CHROMA_COLLECTION_NAME = "chroma-system"
+    CHROMA_DB_PATH = "./chroma"
+    CHROMA_COLLECTION_NAME = "docNew"
 
 
 # ollama 실행 파일 경로 탐지 (PATH 문제 대비)
@@ -142,25 +143,20 @@ def check_server_and_list_models(models_to_test: List[str]):
         print("Ollama 서버 연결 실패:", e)
 
 
-def _get_documents(file_name: str):
-    """
-    주어진 CSV 파일 이름에서 데이터를 읽어 LangChain의 Document 객체 리스트로 변환합니다.
-    각 행은 하나의 Document가 되며, 모든 컬럼의 내용이 합쳐져 page_content가 됩니다.
-    """
-    all_docs = []
+def _get_documents(file_name: str, file_name2: str):
+    
+    loader1 = CSVLoader(file_name,encoding="UTF-8")
+    documents1 = loader1.load()
+    loader2 = CSVLoader(file_name2,encoding="UTF-8")
+    documents2 = loader2.load()
+    documents = documents1+documents2
 
-    df_owner = pd.read_csv(file_name, encoding="utf-8")
-    for _, row in df_owner.iterrows():
-        content = " | ".join([f"{col}: {row[col]}" for col in df_owner.columns])
-        all_docs.append(
-            Document(
-                page_content=content,
-                metadata={"source": file_name},
-            )
-        )
+    text_splitter = CharacterTextSplitter(separator="\n", chunk_size=300, chunk_overlap=0)
+    document_list = text_splitter.split_documents(documents)
 
-    print(f"총 문서 수: {len(all_docs)}")
-    return all_docs
+
+    
+    return document_list
 
 
 def _get_retriever():
@@ -170,7 +166,7 @@ def _get_retriever():
     2. HuggingFace 임베딩 모델을 사용하여 문서들을 벡터로 변환하고 ChromaDB에 저장합니다.
     3. 저장된 벡터 데이터베이스를 기반으로 리트리버(retriever)를 생성합니다.
     """
-    _all_docs: List[Document] = _get_documents(LLMConfig.FILE_PATH)
+    _all_docs: List[Document] = _get_documents(LLMConfig.FILE_PATH1, LLMConfig.FILE_PATH2)
 
     embedding = HuggingFaceEmbeddings(model_name=LLMConfig.EMBEDDING_MODEL)
     database = Chroma.from_documents(
@@ -208,6 +204,8 @@ def get_history_retriever():
     )
     return history_aware_retriever
 
+import exm_answer
+answer_examples = exm_answer.answer_examples
 
 def get_rag_chain():
     llm = _get_llm()
@@ -241,10 +239,10 @@ def get_rag_chain():
     history_aware_retriever = get_history_retriever()
     question_answer_chain = create_stuff_documents_chain(llm, qa_prompt)
 
-    rag_chain = create_retrieval_chain(history_aware_retriever, question_answer_chain)
+    rag_chain2 = create_retrieval_chain(history_aware_retriever, question_answer_chain)
 
     conversational_rag_chain = RunnableWithMessageHistory(
-        rag_chain,
+        rag_chain2,
         get_session_history,
         input_messages_key="input",
         history_messages_key="chat_history",
@@ -254,8 +252,8 @@ def get_rag_chain():
     return conversational_rag_chain
 
 
-def get_ai_response(rag_chain, user_message, session_id="default_session"):
-    ai_response = rag_chain.invoke(  # stream
+def get_ai_response(rag_chain2, user_message, session_id="default_session"):
+    ai_response = rag_chain2.invoke(  # stream
         {"input": user_message},
         config={"configurable": {"session_id": session_id}},
     )
@@ -263,23 +261,25 @@ def get_ai_response(rag_chain, user_message, session_id="default_session"):
 
 
 if __name__ == "__main__":
+
+ 
     # Ollama 서버 및 모델 준비 상태 확인
     check_server_and_list_models([LLMConfig.MODEL])
     # RAG 체인 생성
-    rag_chain = get_rag_chain()
+    rag_chain2 = get_rag_chain()
 
     # 첫 번째 질문
-    question = "그룹웨어에서 메일이 보내지지 않아 누구에게 문의해야해? 연락처 알려줘"
-    print(f"질문: {question}")
-    response = get_ai_response(
-        rag_chain, question, session_id=LLMConfig.TEST_SESSION_ID
+    question1_1 = "그룹웨어에서 메일이 보내지지 않아 누구에게 문의해야해? 연락처 알려줘"
+    print(f"질문: {question1_1}")
+    response1_1 = get_ai_response(
+        rag_chain2, question1_1, session_id=LLMConfig.TEST_SESSION_ID
     )
-    print(f"답변: {response}")
+    print(f"답변: {response1_1}")
 
     # 두 번째 질문 (대화 이어가기)
-    question_2 = "그 사람의 이메일 주소도 알려줘"
-    print(f"\n질문: {question_2}")
-    response_2 = get_ai_response(
-        rag_chain, question_2, session_id=LLMConfig.TEST_SESSION_ID
+    question_2_1 = "그 사람의 이메일 주소도 알려줘"
+    print(f"\n질문: {question_2_1}")
+    response_2_1 = get_ai_response(
+        rag_chain2, question_2_1, session_id=LLMConfig.TEST_SESSION_ID
     )
-    print(f"답변: {response_2}")
+    print(f"답변: {response_2_1}")
