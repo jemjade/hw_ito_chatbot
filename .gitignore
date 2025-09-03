@@ -7,3 +7,4 @@ venv/
 chroma_db/
 chroma/
 .DS_Store
+.python-version

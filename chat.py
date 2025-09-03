@@ -5,7 +5,7 @@ import json
 from data.system_admins import SYSTEM_ADMINS
 from utils.keyword_matcher import KeywordMatcher
 from dotenv import load_dotenv
-#from llm import get_ai_response
+from llm import get_ai_response
 
 # 페이지 설정
 st.set_page_config(page_title="한화생명 시스템 담당자 검색", page_icon="💼", layout="wide")

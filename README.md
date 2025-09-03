@@ -10,8 +10,14 @@
 
 2. Create and activate a virtual environment:
     ```sh
-    python3 -m venv venv
-    source venv/bin/activate
+    # python 설치되어 있지 않은 경우
+    pyenv install 3.11
+    
+    # Python 3.11.13을 기반으로 hw_ito_env라는 이름의 **가상환경(virtualenv)**을 새로 만듭니다.
+    pyenv virtualenv 3.11.13 hw_ito_env
+
+    # 현재 디렉토리(프로젝트 폴더)에 대해 hw_ito_env 환경을 로컬 기본 Python 버전/환경으로 지정합니다.
+    pyenv local hw_ito_env
     ```
 
 3. Install the required dependencies:
