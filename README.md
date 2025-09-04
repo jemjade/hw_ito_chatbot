@@ -1,6 +1,7 @@
 # Hanwha General Insurance chatbot Project
 
-## 설치방법
+## 개발환경 구성 방법
+### 소스코드 및 라이브러리 설치
 
 1. 리파지토리 클론:
     ```sh
@@ -25,7 +26,7 @@
     pip install -r requirements.txt
     ```
 
-## Ollama 설치 및 실행
+### Ollama 설치 및 실행
 ```
 brew install ollama
 brew install --cask ollama-app
@@ -33,10 +34,14 @@ brew install --cask ollama-app
 ollama --version
 ollama run qwen2.5:3b
 # CLI 환경에서 모델 응답 정상동작 확인
-
 ```
 
-## Usage
+### 데이터셋 준비
+1. 시스템 별 담당자 리스트.csv 파일을 받아서 emnbInfoList.csv로 이름 변경
+2. 업무시스템별 정보.csv 파일을 받아서 SysInfoList.csv 로 이름 변경
+3. 프로젝트 루트 디렉토리에 위치
+
+### Streamlit 실행
 
 1. Run the Streamlit application:
     ```sh
@@ -45,6 +50,8 @@ ollama run qwen2.5:3b
 
 2. http://localhost:8501 접속
 
+### 정상동작 테스트
+`테스트 화면` 탭에 접근하여 아무거나 질문
 
 ## Overview
 

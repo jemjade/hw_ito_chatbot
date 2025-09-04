@@ -438,7 +438,7 @@ def display_messages():
 
 def handle_user_input():
     """Handle new user input and generate AI response."""
-    if user_question := st.chat_input(placeholder="소득세에 관련된 궁금한 내용들을 말씀해주세요!"):
+    if user_question := st.chat_input(placeholder="궁금한 내용들을 질문해주세요!"):
         # Display the user's message
         with st.chat_message("user"):
             st.write(user_question)
@@ -526,7 +526,7 @@ def main():
 
     # 메인 영역
     tab1, tab2, tab3, tab4, tab5, tab6 = st.tabs(
-        ["💬 채팅 검색", "📋 전체 담당자", "📝 대화 기록", "💡 개선사항", "📔교육용 자료", "테스트 화면"])
+        ["💬 채팅 검색", "📋 전체 담당자", "📝 대화 기록", "💡 개선사항", "📔교육용 자료", "🛠️ 테스트 화면"])
 
     with tab1:
         st.header("💬 채팅으로 담당자 찾기")
@@ -976,7 +976,7 @@ def main():
             """)
 
     with tab6:
-        st.header("🎶테스트 화면")
+        st.header("🎶 자유로운 대화방 For TEST")
         # Initialize session state
         initialize_session_state()
 
