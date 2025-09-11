@@ -50,8 +50,10 @@ ollama run qwen2.5:3b
 
 2. http://localhost:8501 접속
 
-### 정상동작 테스트
-`테스트 화면` 탭에 접근하여 아무거나 질문
+3. `테스트 화면` 탭에 접근하여 아무거나 질문
+
+> 별도 llm.py 테스트 방법
+> python llm.py
 
 ## Overview
 
