@@ -15,7 +15,7 @@ from uuid import uuid4  # NEW: 세션ID 생성
 # 페이지 설정
 st.set_page_config(page_title="한화생명 시스템 담당자 검색", page_icon="💼", layout="wide")
 
-# 모바일 최적화 CSS
+# 모바일 최적화 CSS!
 st.markdown("""
 <style>
     /* 모바일 대응 기본 설정 */
