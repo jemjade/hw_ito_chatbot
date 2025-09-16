@@ -3,9 +3,14 @@ import pandas as pd
 from datetime import datetime
 import json
 from data.system_admins import SYSTEM_ADMINS
-from utils.keyword_matcher import KeywordMatcher
+
+#from utils.keyword_matcher import KeywordMatcher
 from dotenv import load_dotenv
-from llm import get_ai_response
+
+# 변경(LLM 체인 워밍업까지 사용)
+from llm import get_ai_response, get_rag_chain, check_server_and_models, LLMConfig
+from uuid import uuid4  # NEW: 세션ID 생성
+
 
 # 페이지 설정
 st.set_page_config(page_title="한화생명 시스템 담당자 검색", page_icon="💼", layout="wide")
@@ -199,6 +204,29 @@ st.markdown("""
             margin-top: 5px !important;
         }
     }
+    
+    /* 채팅 입력창을 항상 페이지 하단에 고정 */
+    / ** [data-testid="stChatInput"] {
+        max-width: 800px !important;   /* 최대 가로폭 제한 (중간 사이즈 느낌) */
+        margin: 0 auto !important;     /* 가운데 정렬 */
+        border-radius: 10px !important;
+        
+        position: fixed !important;
+        bottom: 0 !important;
+        left: 0 !important;
+        right: 0 !important;
+        padding: 0.75rem 1rem calc(env(safe-area-inset-bottom, 0) + 0.75rem) 1rem !important;
+        background: #ffffff !important;
+        border-top: 1px solid #e9ecef !important;
+        z-index: 1000 !important;
+    }
+
+    /* 본문이 입력창과 겹치지 않도록 하단 여백 확보 */
+    .main .block-container {
+        padding-bottom: 120px !important; /* 입력창 높이 + 여유 */
+    } **/
+
+            
 </style>
 """,
             unsafe_allow_html=True)
@@ -216,9 +244,9 @@ if 'improvement_suggestions' not in st.session_state:
     st.session_state.improvement_suggestions = []
 
 # 키워드 매처 초기화
-matcher = KeywordMatcher(SYSTEM_ADMINS)
+#matcher = KeywordMatcher(SYSTEM_ADMINS)
 
-
+# 즐겨찾기에 추가
 def add_to_favorites(admin_id):
     """즐겨찾기에 추가"""
     if admin_id not in st.session_state.favorites:
@@ -226,7 +254,7 @@ def add_to_favorites(admin_id):
         st.success(f"즐겨찾기에 추가되었습니다!")
         st.rerun()
 
-
+# 즐겨찾기에서 제거
 def remove_from_favorites(admin_id):
     """즐겨찾기에서 제거"""
     if admin_id in st.session_state.favorites:
@@ -234,7 +262,7 @@ def remove_from_favorites(admin_id):
         st.success(f"즐겨찾기에서 제거되었습니다!")
         st.rerun()
 
-
+# 최근 조회에 추가
 def add_to_recent_searches(admin_id):
     """최근 조회에 추가"""
     if admin_id in st.session_state.recent_searches:
@@ -245,7 +273,7 @@ def add_to_recent_searches(admin_id):
         st.session_state.recent_searches = st.session_state.recent_searches[:
                                                                             10]
 
-
+# 담당자 정보 카드 표시
 def display_admin_card(admin, show_favorite_button=True, context="default"):
     """담당자 정보 카드 표시 (모바일 최적화)"""
     with st.container():
@@ -318,7 +346,7 @@ def display_admin_card(admin, show_favorite_button=True, context="default"):
 
         st.markdown("<br>", unsafe_allow_html=True)
 
-
+# 채팅 기록에 메시지 추가
 def add_chat_message(user_message, bot_response, found_admins):
     """채팅 기록에 메시지 추가"""
     message_id = len(st.session_state.chat_history)
@@ -337,7 +365,7 @@ def add_chat_message(user_message, bot_response, found_admins):
         None
     })
 
-
+# 피드백 추가
 def add_feedback(message_id, feedback_type):
     """피드백 추가"""
     if message_id < len(st.session_state.chat_history):
@@ -352,7 +380,7 @@ def add_feedback(message_id, feedback_type):
         })
         st.success("피드백이 등록되었습니다!")
 
-
+# 개선사항 추가
 def add_improvement_suggestion(suggestion):
     """개선사항 추가"""
     st.session_state.improvement_suggestions.append({
@@ -363,7 +391,7 @@ def add_improvement_suggestion(suggestion):
     })
     st.success("개선사항이 등록되었습니다!")
 
-
+# 피드백 버튼 표시 (모바일 최적화)
 def display_feedback_buttons(message_id):
     """피드백 버튼 표시 (모바일 최적화)"""
     if message_id < len(st.session_state.chat_history):
@@ -422,20 +450,42 @@ def display_feedback_buttons(message_id):
                 """,
                             unsafe_allow_html=True)
 
+# 한번만 체인을 만들고, 이후 호출에 재사용
 def initialize_session_state():
     """Initialize session state variables."""
     if 'env_loaded' not in st.session_state:
         load_dotenv()
         st.session_state['env_loaded'] = True
+
+    # NEW: 대화 세션ID (LLM 대화 문맥 유지)
+    if 'session_id' not in st.session_state:
+        st.session_state.session_id = str(uuid4())
+
+    # NEW: RAG 체인 워밍업 & 캐시 (최초 1회)
+    if 'rag_chain' not in st.session_state:
+        try:
+            # 모델 준비 확인(미설치 시 pull)
+            check_server_and_models([LLMConfig.MODEL])
+        except Exception as e:
+            st.sidebar.warning(f"Ollama 준비 경고: {e}")
+
+        try:
+            st.session_state.rag_chain = get_rag_chain()
+        except Exception as e:
+            st.sidebar.error(f"RAG 체인 초기화 실패: {e}")
+            st.session_state.rag_chain = None
+
     if 'message_list' not in st.session_state:
         st.session_state.message_list = []
 
+# 기존 대화 메시지 표시
 def display_messages():
     """Display all previous messages."""
     for message in st.session_state.message_list:
         with st.chat_message(message["role"]):
             st.write(message["content"])
 
+# 사용자 입력 처리
 def handle_user_input():
     """Handle new user input and generate AI response."""
     if user_question := st.chat_input(placeholder="궁금한 내용들을 질문해주세요!"):
@@ -455,9 +505,9 @@ def handle_user_input():
                 st.error(f"AI 응답 생성 중 오류가 발생했습니다: {e}")
 
 def main():
+    initialize_session_state()   # ✅ 가장 먼저 호출!
     # 헤더 - 로고와 함께 (로고 파일이 있을 때만 표시)
     import os
-
     if os.path.exists("assets/hanwha_logo.png"):
         col1, col2 = st.columns([1, 8])
 
@@ -523,10 +573,18 @@ def main():
                         st.rerun()
         else:
             st.info("최근 조회 기록이 없습니다.")
+        
+        st.markdown("---")
+        st.subheader("🧠 LLM 상태")
+        st.text(f"Model: {LLMConfig.MODEL}")
+        st.text(f"Session: {st.session_state.get('session_id','-')[:8]}...")
+        st.text(f"RAG Ready: {st.session_state.get('rag_chain') is not None}")
+
+
 
     # 메인 영역
-    tab1, tab2, tab3, tab4, tab5, tab6 = st.tabs(
-        ["💬 채팅 검색", "📋 전체 담당자", "📝 대화 기록", "💡 개선사항", "📔교육용 자료", "🛠️ 테스트 화면"])
+    tab1, tab2, tab3, tab4, tab5= st.tabs(
+        ["💬 채팅 검색", "📋 전체 담당자", "📝 대화 기록", "💡 개선사항", "📔교육용 자료"])
 
     with tab1:
         st.header("💬 채팅으로 담당자 찾기")
@@ -539,57 +597,55 @@ def main():
                 "계약 관련 부서는 어디인가요?", "근무 시간은 어떻게 되세요?", "고객서비스 담당자 연락처 알려주세요",
                 "보험금 청구 담당자가 누구인가요?", "시스템 장애 신고는 어디로 하나요?"
             ]
-
-            # 예시 질문들을 버튼으로 만들어서 클릭하면 입력창에 자동 입력
-            for i, question in enumerate(example_questions):
-                if st.button(f"💬 {question}",
-                             key=f"example_q_{i}",
-                             use_container_width=True):
-                    st.session_state.selected_question = question
+        # 예시 질문에 대한 답변 생성
+            cols = st.columns(2)
+            for i, q in enumerate(example_questions):
+                if cols[i % 2].button(f"💬 {q}", key=f"ex_{i}", use_container_width=True):
+                    # 바로 사용자 메시지로 추가하고 재실행하면 입력창 없이도 흐름이 이어집니다.
+                    st.session_state.message_list.append({"role": "user", "content": q})
+                    # LLM 호출
+                    with st.spinner("AI가 문서 기반 답변을 생성 중..."):
+                        ai_reply = get_ai_response(
+                            rag_chain=st.session_state.get('rag_chain'),
+                            user_message=q,
+                            session_id=st.session_state.get('session_id', 'default_session'),
+                        )
+                    st.session_state.message_list.append({"role": "ai", "content": ai_reply})
                     st.rerun()
 
-        # 채팅 입력
-        # 선택된 질문이 있으면 기본값으로 설정
-        default_value = ""
-        if hasattr(st.session_state, 'selected_question'):
-            default_value = st.session_state.selected_question
-            # 사용 후 삭제
-            delattr(st.session_state, 'selected_question')
+        # 1) 지금까지의 대화 렌더링
+        for m in st.session_state.message_list:
+            with st.chat_message(m["role"]):
+                st.write(m["content"])
 
-        user_input = st.text_input(
-            "질문을 입력하세요",
-            value=default_value,
-            placeholder="무엇이든 물어보세요! (업무 담당자 안내, 부서 찾기 등)",
-            label_visibility="collapsed")
+        # 2) 화면 하단 고정 입력창(내장): 대화가 자연스럽게 이어짐
+        user_question = st.chat_input("무엇이든 물어보세요! (업무 담당자 안내, 부서 찾기 등)")
+        if user_question:
+            # 사용자 메시지 출력 + 저장
+            with st.chat_message("user"):
+                st.write(user_question)
+            st.session_state.message_list.append({"role": "user", "content": user_question})
 
-        if user_input:
-            # 키워드 매칭으로 담당자 찾기
-            matched_admins = matcher.find_matching_admins(user_input)
+            # LLM 호출 + 출력 + 저장
+            with st.spinner("AI가 문서 기반 답변을 생성 중..."):
+                try:
+                    ai_response = get_ai_response(
+                        rag_chain=st.session_state.get('rag_chain'),
+                        user_message=user_question,
+                        session_id=st.session_state.get('session_id', 'default_session'),
+                    )
+                except Exception as e:
+                    ai_response = f"AI 응답 생성 중 오류가 발생했습니다: {e}"
+                    st.error(ai_response)
+            
+            with st.chat_message("ai"):
+                st.write(ai_response)
+            st.session_state.message_list.append({"role": "ai", "content": ai_response})
 
-            if matched_admins:
-                bot_response = f"'{user_input}' 관련하여 {len(matched_admins)}명의 담당자를 찾았습니다:"
-                st.success(bot_response)
+            # 다음 입력을 위한 재렌더(스크롤이 자연스럽게 맨 아래로)
+            st.rerun()
 
-                for admin in matched_admins:
-                    display_admin_card(admin, context="chat")
-                    add_to_recent_searches(admin['id'])
-
-                # 채팅 기록에 추가
-                add_chat_message(user_input, bot_response,
-                                 [admin['id'] for admin in matched_admins])
-
-                # 피드백 버튼 표시
-                current_message_id = len(st.session_state.chat_history) - 1
-                display_feedback_buttons(current_message_id)
-
-            else:
-                bot_response = "죄송합니다. 관련 담당자를 찾을 수 없습니다. 다른 키워드로 검색해보시거나 전체 담당자 목록을 확인해주세요."
-                st.warning(bot_response)
-                add_chat_message(user_input, bot_response, [])
-
-                # 피드백 버튼 표시
-                current_message_id = len(st.session_state.chat_history) - 1
-                display_feedback_buttons(current_message_id)
+            
 
     with tab2:
         st.header("📋 전체 시스템 담당자")
@@ -975,16 +1031,8 @@ def main():
             - 삭제된 파일은 복구할 수 없으니 신중하게 삭제해주세요
             """)
 
-    with tab6:
-        st.header("🎶 자유로운 대화방 For TEST")
-        # Initialize session state
-        initialize_session_state()
+ 
 
-        # Display all previous messages
-        display_messages()
-
-        # Handle new user input
-        handle_user_input()
 
     # 선택된 담당자 상세 보기 (사이드바에서 클릭한 경우)
     if hasattr(st.session_state, 'selected_admin'):
